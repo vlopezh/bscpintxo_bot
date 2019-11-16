@@ -1,0 +1,5 @@
+*.pyc
+__pycache__/
+bscpintxo_bot.json
+google_credentials.json
+token.pickle
