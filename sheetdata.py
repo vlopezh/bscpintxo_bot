@@ -17,8 +17,7 @@ class SheetDataException(Exception):
 class SheetData:
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
     DATA_RANGE = 'Votaciones!A1:Z30'
-    VOTE_THRESHOLD = 0.05
-    CHOICES_LEN = 12
+    CHOICES_LEN = 16
 
     def __init__(self, spreadsheet_id):
         # Spreadsheet raw values
@@ -83,14 +82,17 @@ class SheetData:
         """
         self._data = {'people': [], 'places': []}
 
-        # Create 'people' from cells [A5, A6, ...] and populate their votes at [C5:Z5, C6:Z6, ...]
-        for n, cell in enumerate(islice(self._values[0], 4, None)):
+        # Create 'people' from cells [D1, E1, ...] and populate their votes at [D3:D30, E3:E30, ...]
+        # Iterate _values[0] (Row 1) from column D to get people's names
+        COLUMN_D_OFFSET = 3
+        for i, cell in enumerate(islice(self._values[0], COLUMN_D_OFFSET, None)):
             person = {'name': cell, 'votes': []}
 
-            # Obtain votes
+            # Obtain votes from _values (all Rows) starting on Row 3
+            ROW_3_OFFSET = 2
             votes = []
-            for row in islice(self._values, 2, None):
-                vote = self._cell_to_float(row, 4+n)
+            for row in islice(self._values, ROW_3_OFFSET, None):
+                vote = self._cell_to_float(row, COLUMN_D_OFFSET+i)
                 votes.append(vote)
 
             # Normalize votes
@@ -100,11 +102,12 @@ class SheetData:
 
             self._data['people'].append(person)
 
-        # Create 'places' from cells [C3:Z3] with time [C4:Z4]
-        for row in islice(self._values, 2, None):
+        # Create 'places' from cells [A3:A30] with time [B3:B30]
+        ROW_3_OFFSET = 2
+        for row in islice(self._values, ROW_3_OFFSET, None):
             place = {}
-            place['name'] = row[2]
-            place['time'] = self._cell_to_float(row, 3)
+            place['name'] = row[0]
+            place['time'] = self._cell_to_float(row, 1)
             self._data['places'].append(place)
 
 
@@ -149,16 +152,16 @@ class SheetData:
                         if person['name'] in self._choices['participants']
                     ]
             try:
-                weight = int((sum(votes) / len(votes)) / SheetData.VOTE_THRESHOLD)
+                weight = sum(votes) / len(votes)
             except ZeroDivisionError:
                 raise SheetDataException
-            weight = weight if weight > 0 else 0
+            weight = weight if weight > 0.0 else 0.0
             total_weight += weight
             self._choices['chances'].append({'place': place, 'weight': weight})
 
         # Iterate the dictionary again to compute percentages
         for chance in self._choices['chances']:
-            chance['perc'] = float(chance['weight']) / total_weight * 100
+            chance['perc'] = chance['weight'] / total_weight * 100
 
         self._choices['chances'].sort(key=lambda x: x['weight'], reverse=True)
 
@@ -167,22 +170,22 @@ class SheetData:
         max_len = SheetData.CHOICES_LEN
         table = []
         for chance in self.choices['chances']:
-            # Stop iterating if weight is 0 (the list is sorted, we are done)
-            if chance['weight'] == 0 and hide_zeroes:
+            # Stop iterating if perc is less than 1e-2 (the list is sorted, we are done)
+            if chance['perc'] < 0.01 and hide_zeroes:
                 break
 
             # Shorten place name
             name = chance['place']
             name = name if len(name) < max_len else name[:max_len-4] + '...'
 
-            table.append([name, chance['weight'], chance['perc']])
+            table.append([name, chance['perc']])
 
         return tabulate.tabulate(table, self.headers, floatfmt='.2f')
 
 
     @property
     def headers(self):
-        return ['Sitio', 'Peso', '%']
+        return ['Sitio', '%']
 
     @property
     def people(self):
