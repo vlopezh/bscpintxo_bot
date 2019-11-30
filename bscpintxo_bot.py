@@ -91,8 +91,15 @@ def start(update: Update, context: CallbackContext):
 
 @private_command
 def help(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Available commands... (tbd).'
-            ' Ok, only a little: /start /choices /roll')
+    text = (
+            'Available commands\n'
+            '   /people - List all names registered in the spreadsheet.\n'
+            '   /choices [<people>] - List all possible choices and their probabilities.'
+                                    ' Optionally, filter by participants.\n'
+            '   /roll [<people>] - Obtain a weighted random choice from the list of places.'
+                                    ' Optionally, filter by participants.\n'
+            )
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 @private_command
 def choices(update: Update, context: CallbackContext):
