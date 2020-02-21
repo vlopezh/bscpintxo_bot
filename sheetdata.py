@@ -105,10 +105,11 @@ class SheetData:
         # Create 'places' from cells [A3:A30] with time [B3:B30]
         ROW_3_OFFSET = 2
         for row in islice(self._values, ROW_3_OFFSET, None):
-            place = {}
-            place['name'] = row[0]
-            place['time'] = self._cell_to_float(row, 1)
-            self._data['places'].append(place)
+            if row and row[0]:
+                place = {}
+                place['name'] = row[0]
+                place['time'] = self._cell_to_float(row, 1)
+                self._data['places'].append(place)
 
 
     def _cell_to_float(self, row, i):
