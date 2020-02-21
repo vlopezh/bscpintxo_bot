@@ -96,7 +96,7 @@ class SheetData:
                 votes.append(vote)
 
             # Normalize votes
-            sum_of_abs = sum([abs(v) for v in votes])
+            sum_of_abs = sum([abs(v) for v in votes]) or 1.0
             for v in votes:
                 person['votes'].append(v/sum_of_abs)
 
