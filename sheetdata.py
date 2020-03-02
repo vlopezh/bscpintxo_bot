@@ -10,6 +10,7 @@ from unidecode import unidecode
 import locale
 import tabulate
 import sys
+import math
 
 class SheetDataException(Exception):
     pass
@@ -115,7 +116,8 @@ class SheetData:
     def _cell_to_float(self, row, i):
         locale.setlocale(locale.LC_NUMERIC, self._locale)
         try:
-            return locale.atof(row[i])
+            cell_value = locale.atof(row[i])
+            return cell_value if math.isfinite(cell_value) else 0.0
         except (IndexError, ValueError) as e:
             return 0.0
 
